@@ -1,0 +1,13 @@
+version: "3"
+services:
+
+  file-service:
+    build:
+      context: ""
+    container_name: timeline-service
+    environment:
+      - JAVA_OPTS=-Xms1g -Xmx1g -Dspring.profiles.active=sit
+    image: timeline-service:1.0
+    restart: always
+    ports:
+      - 8085:8080

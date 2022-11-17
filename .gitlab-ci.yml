@@ -1,0 +1,89 @@
+
+include:
+  - project: devops/ci-template
+    file: request-deploy-prod.yml
+    ref: master
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  SERVICE_NAME: $CI_PROJECT_NAME
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  SERVICE_PATH: /timeline-service
+  DEPLOYMENT_TYPE: Deployment
+
+cache:
+  key: "$CI_PROJECT_NAMESPACE:$CI_PROJECT_NAME"
+  paths:
+    - .m2/repository
+
+stages:
+  - compile_build
+  - docker_build
+  - deploy non-prod
+  - request deploy prod
+
+compile build:
+  tags: [ maven-jdk11 ]
+  stage: compile_build
+  script:
+    - 'mvn --batch-mode -U clean package spring-boot:repackage -DskipTests'
+    - 'mkdir build'
+    - 'cp target/timeline-service-*.jar build/'
+  only:
+    refs:
+      - master
+      - uat
+      - sit
+  artifacts:
+    expire_in: 1h
+    paths:
+      - build/timeline-service-*.jar
+
+docker build:
+  tags: [ docker-registry ]
+  stage: docker_build
+  cache: { }
+  before_script:
+    - 'docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD" $DOCKER_HUB'
+  script:
+    - 'docker build -t $DOCKER_URL/$SERVICE_NAME:$IMAGE_TAG .'
+    - 'docker push $DOCKER_URL/$SERVICE_NAME:$IMAGE_TAG'
+  only:
+    refs:
+      - master
+      - uat
+      - sit
+
+deploy sit:
+  cache: { }
+  when: manual
+  tags: [ non-prod ]
+  stage: deploy non-prod
+  variables:
+    NAMESPACE: sit
+    EXTERNAL_HOST: external-dev.vpbanks.com.vn
+    INTEGRATION_HOST: integration-dev.vpbanks.com.vn
+    MANAGEMENT_HOST: management-dev.vpbanks.com.vn
+    FILE_PATH: $CI_PROJECT_DIR/k8s/timeline-service.yaml
+  script:
+    - cd /helm && sh deploy-cloud.sh
+  only:
+    refs:
+      - sit
+
+deploy uat:
+  cache: { }
+  when: manual
+  tags: [ non-prod ]
+  stage: deploy non-prod
+  variables:
+    NAMESPACE: uat
+    EXTERNAL_HOST: external-uat.vpbanks.com.vn
+    INTEGRATION_HOST: integration-uat.vpbanks.com.vn
+    MANAGEMENT_HOST: management-uat.vpbanks.com.vn
+    FILE_PATH: $CI_PROJECT_DIR/k8s/timeline-service.yaml
+  script:
+    - cd /helm && sh deploy-cloud.sh
+  only:
+    refs:
+      - uat

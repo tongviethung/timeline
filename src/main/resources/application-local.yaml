@@ -1,0 +1,81 @@
+server:
+  port: 8082
+  servlet:
+    context-path: /timeline-service
+
+spring:
+  application:
+    name: timeline-service
+  #  task:
+  #    scheduling:
+  #      pool:
+  #        size: 20
+
+  data:
+    mongodb:
+      host: 10.20.2.2
+      port: 27017
+      authentication-database: admin
+      username: timeline_dev_owner
+      password: timeline_dev_owner
+      database: timeline_dev
+  #      uri: mongodb://timeline_dev:Timeline#2022@10.20.0.11:27027/?minPoolSize=100&maxPoolSize=100
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+#  config:
+#    import: optional:configserver:http://${SECURITY_NAME:vpbanks}:${SECURITY_PASSWORD:vpbanks}@${CONFIG_SERVER:localhost:8888}
+  redis:
+    host: localhost
+    port: 6379
+    jedis:
+      pool:
+        max-active: 1000
+        max-idle: 1000
+        min-idle: 0
+        #        test-on-borrow: true
+        #        test-on-return: true
+        #        test-while-idle: false
+        block-when-exhausted: true
+        max-wait: 100
+  #    lettuce:
+  #      pool:
+  #        time-between-eviction-runs: 30
+  #        min-idle: 60
+  #        num-test-per-eviction-run: 3
+  mvc:
+    pathmatch:
+      matching-strategy: ant-path-matcher
+  kafka:
+    bootstrap-servers: 10.20.0.11:9092
+    consumer:
+      timeline:
+        event:
+          topic: timeline.service.event.info.sit
+          group-id: timeline.service.group.event.info.sit
+        result:
+          topic: timeline.service.result.info.sit
+          group-id: timeline.service.group.result.info.sit
+    producer:
+      timeline:
+        trigger:
+          event:
+            bond: timeline.service.trigger.event.bond.sit
+            copytrade: timeline.service.trigger.event.copytrade.sit
+            fund: timeline.service.trigger.event.fund.sit
+
+log:
+  sensitive:
+    key: phone
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,health
+logging:
+  level:
+    org.springframework.data.mongodb.core.MongoTemplate: DEBUG

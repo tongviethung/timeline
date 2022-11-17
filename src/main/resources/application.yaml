@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: timeline-service
+  config:
+    import: optional:configserver:http://${SECURITY_NAME}:${SECURITY_PASSWORD}@${CONFIG_SERVER}
+
+server:
+  port: 8080
+
+#SECURITY_NAME: vpbanks
+#SECURITY_PASSWORD: vpbanks
+#CONFIG_SERVER: 10.10.240.203:8888
